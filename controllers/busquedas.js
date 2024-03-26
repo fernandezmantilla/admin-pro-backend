@@ -2,20 +2,20 @@ const { response, request } = require('express');
 const Usuario = require('../models/usuario');
 const bcript = require('bcryptjs');
 const { jwtGen } = require('../helpers/jwt');
+
 const getUsuarios = async (req, res) => {
     const desde = Number(req.query.desde) || 0;
-
-    const [usuarios, total] = await Promise.all([
+     
+   const [usuarios, total ]=  await Promise.all([
         Usuario
-            .find({}, 'nombre  email  role  google img')
-            .skip(desde)
-            .limit(5),
-            
-        Usuario.countDocuments()
+        .find({}, 'nombre email role google')
+        .skip(desde)
+        .limit( 5),
+        Usuario.count()
     ]);
     res.json({
         ok: true,
-        usuarios: usuarios,
+        usuario: usuario,
         uid: req.uid,
         registros: total
     });
@@ -39,7 +39,7 @@ const crearUsuarios = async (req = request, res = response) => {
         const salt = bcript.genSaltSync();
         usuario.password = bcript.hashSync(password, salt);
 
-
+  
 
         // grabar usuario
         await usuario.save();
@@ -121,7 +121,7 @@ const borrandoUsuarios = async (req, res) => {
             ok: true,
             msg: 'Eliminando usuario',
             id: uid
-        })
+        })       
     } catch (error) {
         console.log(error);
         res.status(500).json

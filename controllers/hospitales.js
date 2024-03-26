@@ -8,7 +8,7 @@ const getHospital = async (req, res) => {
     const hospital = await Hospital.find({}, 'nombre img');
     res.json({
         ok: true,
-        nombre: 'hospitales',
+        hospital: res.nombre
 
     })
 }

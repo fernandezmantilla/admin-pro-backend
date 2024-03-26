@@ -1,6 +1,6 @@
 // /api/Medicoes
 const { Router } = require("express");
-const { getMedico, crearMedico, updMedico, borrandoMedico } = require("../controllers/Medicoes");
+const { getMedico, crearMedico, updMedico, borrandoMedico } = require("../controllers/Medicos");
 const { check } = require("express-validator");
 const { validarCampos } = require('../middlewares/validar-campos');
 const { validarJwt } = require("../middlewares/validar-jwt");
