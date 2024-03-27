@@ -1,26 +1,26 @@
-
 const { Schema, model } = require('mongoose');
 
 const HospitalSchema = Schema({
     nombre: {
         type: String,
-        require: true
+        required: true
     },
-   
     img: {
-        type: String
+        type: String,
     },
-    creador: {
+    usuario: {
+        required: true,
         type: Schema.Types.ObjectId,
-        ref: 'Usuario',
-        require: true
+        ref: 'Usuario'
     }
- 
-}, {collection: 'hospitales'});
+}, {  collection: 'hospitales' });
 
-HospitalSchema.method('toJSON', function(){
-    const { __v,  ...object} = this.toObject();
+
+HospitalSchema.method('toJSON', function() {
+    const { __v, ...object } = this.toObject();
     return object;
 })
 
-module.exports = model( 'Hospital', HospitalSchema);
+
+
+module.exports = model( 'Hospital', HospitalSchema );

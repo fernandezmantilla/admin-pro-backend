@@ -1,123 +1,68 @@
-const { response, request } = require('express');
+const { response } = require('express');
+
 const Hospital = require('../models/hospital');
-const bcript = require('bcryptjs');
-const { jwtGen } = require('../helpers/jwt');
 
-const getHospital = async (req, res) => {
 
-    const hospital = await Hospital.find({}, 'nombre img');
+const getHospitales = async(req, res = response) => {
+
+    const hospitales = await Hospital.find()
+                                    .populate('usuario','nombre img');
+
     res.json({
         ok: true,
-        hospital: res.nombre
-
+        hospitales
     })
 }
 
-const crearHospital = async (req = request, res = response) => {
-    const { nombre } = req.body;
-    const hospital = new Hospital(
-        {
-            usuario: uid,
-            ...req.body
-        }
-    );
+const crearHospital = async(req, res = response) => {
+
+    const uid = req.uid;
+    const hospital = new Hospital({ 
+        usuario: uid,
+        ...req.body 
+    });
 
     try {
+        
+        const hospitalDB = await hospital.save();
+        
 
-        // grabar usuario
-       const hospitalDb = await hospital.save();
+        res.json({
+            ok: true,
+            hospital: hospitalDB
+        });
 
-       res.json({
+    } catch (error) {
+        console.log(error)
+        res.status(500).json({
+            ok: false,
+            msg: 'Hable con el administrador'
+        })
+    }
+    
+
+
+}
+
+const actualizarHospital = (req, res = response) => {
+    res.json({
         ok: true,
-        hospital: hospitalDb
-       });
-
-    } catch (error) {
-        console.log(error);
-        res.status(500).json
-            ({
-                ok: false,
-                msg: 'Error inseperado.... revisar log'
-            });
-    }
+        msg: 'actualizarHospital'
+    })
 }
 
-const updHospital = async (req, res) => {
-    //TODO: validar token y comprobar si el usuario es correcto....
-
-    const uid = req.params.id
-    try {
-        const usuarioDB = await Usuario.findById(uid);
-        if (!usuarioDB) {
-            return res.status(404).json({
-                ok: false,
-                msg: 'El usuario no está registrado'
-            })
-        }
-        // Actualizaciones....
-
-        const { password, google, email, ...campos } = req.body;
-
-        if (usuarioDB.email !== email) {
-            const existeEmail = await Usuario.findOne({ email: email });
-            if (existeEmail) {
-                return res.status(400).json({
-                    ok: false,
-                    msg: 'El correo ya está registrado'
-                })
-            }
-        }
-        // delete campos.password;
-        // delete campos.google;
-        campos.email = email;
-        const updUser = await Usuario.findByIdAndUpdate(uid, campos, { new: true });
-
-        res.json({
-            ok: true,
-            usuario: updUser
-        })
-
-    } catch (error) {
-        console.log(error);
-        res.status(500).json
-            ({
-                ok: false,
-                msg: 'Error inseperado.... revisar log'
-            });
-
-    }
+const borrarHospital = (req, res = response) => {
+    res.json({
+        ok: true,
+        msg: 'borrarHospital'
+    })
 }
-const borrandoHospital = async (req, res) => {
-    const uid = req.params.id;
-    try {
-        const usuarioDB = await Usuario.findById(uid);
-        if (!usuarioDB) {
-            return res.status(404).json({
-                ok: false,
-                msg: 'El usuario no está registrado'
-            })
-        }
-        await Usuario.findOneAndDelete(uid);
-        res.json({
-            ok: true,
-            msg: 'Eliminando usuario',
-            id: uid
-        })
-    } catch (error) {
-        console.log(error);
-        res.status(500).json
-            ({
-                ok: false,
-                msg: 'Error inseperado.... revisar log'
-            });
-    }
 
-}
 
 
 module.exports = {
-    getHospital,
+    getHospitales,
     crearHospital,
-    updHospital,
-    borrandoHospital
+    actualizarHospital,
+    borrarHospital
 }

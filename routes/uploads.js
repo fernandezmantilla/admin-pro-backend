@@ -1,15 +1,21 @@
+/*
+
+    ruta: api/uploads/
+*/
 const { Router } = require('express');
-const fileUpload = require('express-fileupload');
+const expressFileUpload = require('express-fileupload');
+
 
 const { validarJWT } = require('../middlewares/validar-jwt');
-
-const { getTodo, getDocumentosColeccion } = require ('../controllers/busquedas');
+const { fileUpload, retornaImagen } = require('../controllers/uploads');
 
 const router = Router();
 
-router.put('/:tipo/:id', [validarJWT], fileUpload );
+router.use( expressFileUpload() );
 
+router.put('/:tipo/:id', validarJWT , fileUpload );
 
+router.get('/:tipo/:foto', retornaImagen );
 
 
 

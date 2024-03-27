@@ -1,142 +1,173 @@
-const { response, request } = require('express');
+const { response } = require('express');
+const bcrypt = require('bcryptjs');
+
 const Usuario = require('../models/usuario');
-const bcript = require('bcryptjs');
-const { jwtGen } = require('../helpers/jwt');
-const getUsuarios = async (req, res) => {
+const { generarJWT } = require('../helpers/jwt');
+
+
+const getUsuarios = async(req, res) => {
+
     const desde = Number(req.query.desde) || 0;
 
-    const [usuarios, total] = await Promise.all([
+    const [ usuarios, total ] = await Promise.all([
         Usuario
-            .find({}, 'nombre  email  role  google img')
-            .skip(desde)
-            .limit(5),
-            
+            .find({}, 'nombre email role google img')
+            .skip( desde )
+            .limit( 5 ),
+
         Usuario.countDocuments()
     ]);
+
+
     res.json({
         ok: true,
-        usuarios: usuarios,
-        uid: req.uid,
-        registros: total
+        usuarios,
+        total
     });
+
 }
 
-const crearUsuarios = async (req = request, res = response) => {
-    const { email, password, nombre } = req.body;
+const crearUsuario = async(req, res = response) => {
+
+    const { email, password } = req.body;
 
     try {
 
-        const existeEmail = await Usuario.findOne({ email: email });
-        if (existeEmail) {
+        const existeEmail = await Usuario.findOne({ email });
+
+        if ( existeEmail ) {
             return res.status(400).json({
                 ok: false,
                 msg: 'El correo ya está registrado'
-            })
+            });
         }
-        const usuario = new Usuario(req.body);
 
-        // encriptar contraseña...
-        const salt = bcript.genSaltSync();
-        usuario.password = bcript.hashSync(password, salt);
-
-
-
-        // grabar usuario
+        const usuario = new Usuario( req.body );
+    
+        // Encriptar contraseña
+        const salt = bcrypt.genSaltSync();
+        usuario.password = bcrypt.hashSync( password, salt );
+    
+    
+        // Guardar usuario
         await usuario.save();
 
-        // Generar JWT......
-        const token = await jwtGen(usuario.id);
+        // Generar el TOKEN - JWT
+        const token = await generarJWT( usuario.id );
+
+
         res.json({
             ok: true,
-            usuario: usuario,
-            jwt: token
-        })
+            usuario,
+            token
+        });
+
+
     } catch (error) {
         console.log(error);
-        res.status(500).json
-            ({
-                ok: false,
-                msg: 'Error inseperado.... revisar log'
-            });
+        res.status(500).json({
+            ok: false,
+            msg: 'Error inesperado... revisar logs'
+        });
     }
+
+
 }
 
-const updUsuarios = async (req, res) => {
-    //TODO: validar token y comprobar si el usuario es correcto....
 
-    const uid = req.params.id
+const actualizarUsuario = async (req, res = response) => {
+
+    // TODO: Validar token y comprobar si es el usuario correcto
+
+    const uid = req.params.id;
+
+
     try {
-        const usuarioDB = await Usuario.findById(uid);
-        if (!usuarioDB) {
+
+        const usuarioDB = await Usuario.findById( uid );
+
+        if ( !usuarioDB ) {
             return res.status(404).json({
                 ok: false,
-                msg: 'El usuario no está registrado'
-            })
+                msg: 'No existe un usuario por ese id'
+            });
         }
-        // Actualizaciones....
 
+        // Actualizaciones
         const { password, google, email, ...campos } = req.body;
 
-        if (usuarioDB.email !== email) {
-            const existeEmail = await Usuario.findOne({ email: email });
-            if (existeEmail) {
+        if ( usuarioDB.email !== email ) {
+
+            const existeEmail = await Usuario.findOne({ email });
+            if ( existeEmail ) {
                 return res.status(400).json({
                     ok: false,
-                    msg: 'El correo ya está registrado'
-                })
+                    msg: 'Ya existe un usuario con ese email'
+                });
             }
         }
-        // delete campos.password;
-        // delete campos.google;
+        
         campos.email = email;
-        const updUser = await Usuario.findByIdAndUpdate(uid, campos, { new: true });
+        const usuarioActualizado = await Usuario.findByIdAndUpdate( uid, campos, { new: true } );
 
         res.json({
             ok: true,
-            usuario: updUser
-        })
+            usuario: usuarioActualizado
+        });
 
+        
     } catch (error) {
         console.log(error);
-        res.status(500).json
-            ({
-                ok: false,
-                msg: 'Error inseperado.... revisar log'
-            });
-
+        res.status(500).json({
+            ok: false,
+            msg: 'Error inesperado'
+        })
     }
+
 }
-const borrandoUsuarios = async (req, res) => {
+
+
+const borrarUsuario = async(req, res = response ) => {
+
     const uid = req.params.id;
+
     try {
-        const usuarioDB = await Usuario.findById(uid);
-        if (!usuarioDB) {
+
+        const usuarioDB = await Usuario.findById( uid );
+
+        if ( !usuarioDB ) {
             return res.status(404).json({
                 ok: false,
-                msg: 'El usuario no está registrado'
-            })
+                msg: 'No existe un usuario por ese id'
+            });
         }
-        await Usuario.findOneAndDelete(uid);
+
+        await Usuario.findByIdAndDelete( uid );
+
+        
         res.json({
             ok: true,
-            msg: 'Eliminando usuario',
-            id: uid
-        })
+            msg: 'Usuario eliminado'
+        });
+
     } catch (error) {
+        
         console.log(error);
-        res.status(500).json
-            ({
-                ok: false,
-                msg: 'Error inseperado.... revisar log'
-            });
+        res.status(500).json({
+            ok: false,
+            msg: 'Hable con el administrador'
+        });
+
     }
 
+
 }
+
 
 
 module.exports = {
     getUsuarios,
-    crearUsuarios,
-    updUsuarios,
-    borrandoUsuarios
+    crearUsuario,
+    actualizarUsuario,
+    borrarUsuario
 }

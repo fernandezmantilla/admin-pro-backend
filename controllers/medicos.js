@@ -1,123 +1,69 @@
-const { response, request } = require('express');
+const { response } = require('express');
+
 const Medico = require('../models/medico');
-const bcript = require('bcryptjs');
-const { jwtGen } = require('../helpers/jwt');
 
-const getMedico = async (req, res) => {
+const getMedicos = async(req, res = response) => {
 
-    const Medico = await Medico.find({}, 'nombre img');
+    const medicos = await Medico.find()
+                                .populate('usuario','nombre img')
+                                .populate('hospital','nombre img')
+
+
     res.json({
         ok: true,
-        nombre: 'Medicoes',
-
+        medicos
     })
 }
 
-const crearMedico = async (req = request, res = response) => {
-    const { nombre } = req.body;
-    const Medico = new Medico(
-        {
-            usuario: uid,
-            ...req.body
-        }
-    );
+const crearMedico = async (req, res = response) => {
+
+    const uid = req.uid;
+    const medico = new Medico({
+        usuario: uid,
+        ...req.body
+    });
+
 
     try {
 
-        // grabar usuario
-       const MedicoDb = await Medico.save();
+        const medicoDB = await medico.save();
 
-       res.json({
+        
+        res.json({
+            ok: true,
+            medico: medicoDB
+        })
+
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            ok: false,
+            msg: 'Hable con el administrador'
+        })
+    }
+
+
+}
+
+const actualizarMedico = (req, res = response) => {
+    res.json({
         ok: true,
-        Medico: MedicoDb
-       });
-
-    } catch (error) {
-        console.log(error);
-        res.status(500).json
-            ({
-                ok: false,
-                msg: 'Error inseperado.... revisar log'
-            });
-    }
+        msg: 'actualizarMedico'
+    })
 }
 
-const updMedico = async (req, res) => {
-    //TODO: validar token y comprobar si el usuario es correcto....
-
-    const uid = req.params.id
-    try {
-        const usuarioDB = await Usuario.findById(uid);
-        if (!usuarioDB) {
-            return res.status(404).json({
-                ok: false,
-                msg: 'El usuario no está registrado'
-            })
-        }
-        // Actualizaciones....
-
-        const { password, google, email, ...campos } = req.body;
-
-        if (usuarioDB.email !== email) {
-            const existeEmail = await Usuario.findOne({ email: email });
-            if (existeEmail) {
-                return res.status(400).json({
-                    ok: false,
-                    msg: 'El correo ya está registrado'
-                })
-            }
-        }
-        // delete campos.password;
-        // delete campos.google;
-        campos.email = email;
-        const updUser = await Usuario.findByIdAndUpdate(uid, campos, { new: true });
-
-        res.json({
-            ok: true,
-            usuario: updUser
-        })
-
-    } catch (error) {
-        console.log(error);
-        res.status(500).json
-            ({
-                ok: false,
-                msg: 'Error inseperado.... revisar log'
-            });
-
-    }
+const borrarMedico = (req, res = response) => {
+    res.json({
+        ok: true,
+        msg: 'borrarMedico'
+    })
 }
-const borrandoMedico = async (req, res) => {
-    const uid = req.params.id;
-    try {
-        const usuarioDB = await Usuario.findById(uid);
-        if (!usuarioDB) {
-            return res.status(404).json({
-                ok: false,
-                msg: 'El usuario no está registrado'
-            })
-        }
-        await Usuario.findOneAndDelete(uid);
-        res.json({
-            ok: true,
-            msg: 'Eliminando usuario',
-            id: uid
-        })
-    } catch (error) {
-        console.log(error);
-        res.status(500).json
-            ({
-                ok: false,
-                msg: 'Error inseperado.... revisar log'
-            });
-    }
 
-}
 
 
 module.exports = {
-    getMedico,
+    getMedicos,
     crearMedico,
-    updMedico,
-    borrandoMedico
+    actualizarMedico,
+    borrarMedico
 }

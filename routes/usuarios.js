@@ -1,33 +1,45 @@
-// 
-// Ruta: /api/usuarios
-// 
+/*
+    Ruta: /api/usuarios
+*/
+const { Router } = require('express');
+const { check } = require('express-validator');
+const { validarCampos } = require('../middlewares/validar-campos');
 
-const { Router } = require("express");
-const { getUsuarios, crearUsuarios, updUsuarios, borrandoUsuarios } = require("../controllers/usuarios");
-const { check } = require("express-validator");
-const { validarCampos} = require('../middlewares/validar-campos');
-const { validarJwt } = require("../middlewares/validar-jwt");
+const { getUsuarios, crearUsuario, actualizarUsuario, borrarUsuario } = require('../controllers/usuarios');
+const { validarJWT } = require('../middlewares/validar-jwt');
+
 
 const router = Router();
 
-router.get('/', validarJwt, getUsuarios);
 
-router.post('/', [
-    check('nombre', 'El nombre es obligatorio').not().isEmpty(),
-    check('password','El passowrd es obligatorio').not().isEmpty(),
-    check('email', 'Debe ser un email válido').isEmail(),
-    validarCampos
-] ,crearUsuarios);
+router.get( '/', validarJWT , getUsuarios );
 
-router.put('/:id', [
-    validarJwt,
-    check('nombre', 'El nombre es obligatorio').not().isEmpty(),
-    check('email', 'Debe ser un email válido').isEmail(),
-    check('role','El role es obligatorio').not().isEmpty(),
-    validarCampos
+router.post( '/',
+    [
+        check('nombre', 'El nombre es obligatorio').not().isEmpty(),
+        check('password', 'El password es obligatorio').not().isEmpty(),
+        check('email', 'El email es obligatorio').isEmail(),
+        validarCampos,
+    ], 
+    crearUsuario 
+);
 
-] , updUsuarios);
+router.put( '/:id',
+    [
+        validarJWT,
+        check('nombre', 'El nombre es obligatorio').not().isEmpty(),
+        check('email', 'El email es obligatorio').isEmail(),
+        check('role', 'El role es obligatorio').not().isEmpty(),
+        validarCampos,
+    ],
+    actualizarUsuario
+);
 
-router.delete('/:id',  validarJwt, borrandoUsuarios);
+router.delete( '/:id',
+    validarJWT,
+    borrarUsuario
+);
+
+
 
 module.exports = router;

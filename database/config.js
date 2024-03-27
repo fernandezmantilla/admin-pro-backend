@@ -5,13 +5,13 @@ require('dotenv').config();
 const dbConnection = async () => {
     try {
 
-        await mongoose.connect(process.env.DB_CNN);
+        await mongoose.connect(process.env.DB_CNN );
         console.log('Concectado a la nube');
     }
     catch {
         try {
             
-            await mongoose.connect(process.env.MONGODB_URI);
+            await mongoose.connect(process.env.MONGODB_URI );
             console.log('Concectado localmente');
         }
         catch  (error){

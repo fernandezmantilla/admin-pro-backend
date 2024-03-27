@@ -1,142 +1,72 @@
-const { response, request } = require('express');
-const Usuario = require('../models/usuario');
-const bcript = require('bcryptjs');
-const { jwtGen } = require('../helpers/jwt');
+const { response } = require('express');
 
-const getUsuarios = async (req, res) => {
-    const desde = Number(req.query.desde) || 0;
-     
-   const [usuarios, total ]=  await Promise.all([
-        Usuario
-        .find({}, 'nombre email role google')
-        .skip(desde)
-        .limit( 5),
-        Usuario.count()
+const Usuario = require('../models/usuario');
+const Medico = require('../models/medico');
+const Hospital = require('../models/hospital');
+
+
+const getTodo = async(req, res = response ) => {
+
+    const busqueda = req.params.busqueda;
+    const regex = new RegExp( busqueda, 'i' );
+
+    const [ usuarios, medicos, hospitales ] = await Promise.all([
+        Usuario.find({ nombre: regex }),
+        Medico.find({ nombre: regex }),
+        Hospital.find({ nombre: regex }),
     ]);
+
     res.json({
         ok: true,
-        usuario: usuario,
-        uid: req.uid,
-        registros: total
-    });
+        usuarios,
+        medicos,
+        hospitales
+    })
+
 }
 
-const crearUsuarios = async (req = request, res = response) => {
-    const { email, password, nombre } = req.body;
+const getDocumentosColeccion = async(req, res = response ) => {
 
-    try {
+    const tabla    = req.params.tabla;
+    const busqueda = req.params.busqueda;
+    const regex    = new RegExp( busqueda, 'i' );
 
-        const existeEmail = await Usuario.findOne({ email: email });
-        if (existeEmail) {
+    let data = [];
+
+    switch ( tabla ) {
+        case 'medicos':
+            data = await Medico.find({ nombre: regex })
+                                .populate('usuario', 'nombre img')
+                                .populate('hospital', 'nombre img');
+        break;
+
+        case 'hospitales':
+            data = await Hospital.find({ nombre: regex })
+                                    .populate('usuario', 'nombre img');
+        break;
+
+        case 'usuarios':
+            data = await Usuario.find({ nombre: regex });
+            
+        break;
+    
+        default:
             return res.status(400).json({
                 ok: false,
-                msg: 'El correo ya está registrado'
-            })
-        }
-        const usuario = new Usuario(req.body);
-
-        // encriptar contraseña...
-        const salt = bcript.genSaltSync();
-        usuario.password = bcript.hashSync(password, salt);
-
-  
-
-        // grabar usuario
-        await usuario.save();
-
-        // Generar JWT......
-        const token = await jwtGen(usuario.id);
-        res.json({
-            ok: true,
-            usuario: usuario,
-            jwt: token
-        })
-    } catch (error) {
-        console.log(error);
-        res.status(500).json
-            ({
-                ok: false,
-                msg: 'Error inseperado.... revisar log'
+                msg: 'La tabla tiene que ser usuarios/medicos/hospitales'
             });
     }
-}
-
-const updUsuarios = async (req, res) => {
-    //TODO: validar token y comprobar si el usuario es correcto....
-
-    const uid = req.params.id
-    try {
-        const usuarioDB = await Usuario.findById(uid);
-        if (!usuarioDB) {
-            return res.status(404).json({
-                ok: false,
-                msg: 'El usuario no está registrado'
-            })
-        }
-        // Actualizaciones....
-
-        const { password, google, email, ...campos } = req.body;
-
-        if (usuarioDB.email !== email) {
-            const existeEmail = await Usuario.findOne({ email: email });
-            if (existeEmail) {
-                return res.status(400).json({
-                    ok: false,
-                    msg: 'El correo ya está registrado'
-                })
-            }
-        }
-        // delete campos.password;
-        // delete campos.google;
-        campos.email = email;
-        const updUser = await Usuario.findByIdAndUpdate(uid, campos, { new: true });
-
-        res.json({
-            ok: true,
-            usuario: updUser
-        })
-
-    } catch (error) {
-        console.log(error);
-        res.status(500).json
-            ({
-                ok: false,
-                msg: 'Error inseperado.... revisar log'
-            });
-
-    }
-}
-const borrandoUsuarios = async (req, res) => {
-    const uid = req.params.id;
-    try {
-        const usuarioDB = await Usuario.findById(uid);
-        if (!usuarioDB) {
-            return res.status(404).json({
-                ok: false,
-                msg: 'El usuario no está registrado'
-            })
-        }
-        await Usuario.findOneAndDelete(uid);
-        res.json({
-            ok: true,
-            msg: 'Eliminando usuario',
-            id: uid
-        })       
-    } catch (error) {
-        console.log(error);
-        res.status(500).json
-            ({
-                ok: false,
-                msg: 'Error inseperado.... revisar log'
-            });
-    }
+    
+    res.json({
+        ok: true,
+        resultados: data
+    })
 
 }
 
 
 module.exports = {
-    getUsuarios,
-    crearUsuarios,
-    updUsuarios,
-    borrandoUsuarios
+    getTodo,
+    getDocumentosColeccion
 }
+
