@@ -49,7 +49,7 @@ const login = async (req, res = response) => {
 
 }
 
-const googleSignIn = async (req, res = response) => {
+const googleSignIn = async (req=require, res = response) => {
 
     try {
         const {email, name, picture } = await googleVerify(req.body.token);
@@ -94,7 +94,18 @@ const googleSignIn = async (req, res = response) => {
 
 }
 
+const jwtRenew = async (req=require, res = response)=>{
+    const uid = req.uid;
+    const token = await generarJWT(uid);
+
+    res.json({
+        ok: true,
+        uid: uid, 
+        token: token
+    })
+}
 module.exports = {
     login,
-    googleSignIn
+    googleSignIn,
+    jwtRenew
 }
